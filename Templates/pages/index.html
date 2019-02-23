@@ -1,0 +1,148 @@
+{% load static %}
+{% load leaflet_tags %}
+<!DOCTYPE html>
+<html>
+<head>
+	{% leaflet_js %}
+	{% leaflet_css %}
+	<title>GeoDjango Basic Stuff</title>
+	<link rel="stylesheet" type="text/css" href=" {% static 'css/main.css' %} ">
+	<link rel="stylesheet" type="text/css" href=" {% static 'layerControl/leaflet.groupedlayercontrol.min.css' %} ">
+	<link rel="stylesheet" type="text/css" href=" {% static 'route/leaflet-routing-machine.css' %} ">
+
+</head>
+<body>
+	<h1>Here is the map</h1>
+
+
+
+
+
+
+
+
+
+
+
+
+<script type="text/javascript">
+$("#printBtn").click(function(){
+  $('#map').print();
+});
+</script>
+<br>
+<script type="text/javascript">
+	function our_layers(map,options){
+		var osm = L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+				maxZoom: 19,
+				attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+			});
+		var OpenTopoMap = L.tileLayer('http://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+			maxZoom: 17,
+			attribution: 'Map data: &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
+		});
+		var datasets = new L.GeoJSON.AJAX("{% url 'districts' %}",{
+			style: function colors(feature){
+				switch(feature.properties.districts){
+					case 'WAJIR':
+						return{
+							color: 'orange',
+							fillOpacity: 0.8
+						};
+					break;
+					case 'ISIOLO':
+						return{
+							color: 'purple',
+							fillOpacity: 0.8
+						};
+					break;
+				}
+			},
+			onEachFeature: function(feature,layer){
+				layer.bindPopup(feature.properties.dist_name.toString());
+			}
+		});
+		var points = new L.GeoJSON.AJAX("{% url 'incidences' %}",{
+			pointToLayer: function (feature, latlng) {
+                return L.marker(latlng, {
+                    icon: L.icon({
+                        iconUrl: "static/img/red.png",
+                        iconSize: [24, 28],
+                        iconAnchor: [12, 28],
+                        popupAnchor: [0, -25]
+                    }),
+                    title: feature.properties.NAME,
+                    riseOnHover: true
+                });
+            },
+			onEachFeature: function(feature,layer){
+				layer.bindPopup(feature.properties.name.toString());
+			}
+		});
+		//datasets.addTo(map);
+		points.addTo(map);
+		
+		var baseLayers = {
+			"OSM": osm,
+			"OpenTopoMap":OpenTopoMap
+		}
+		var groupedOverlays = {
+		  "Layers": {
+		    "Districts": datasets,
+		    "incidences": points
+		  }
+		};
+		L.control.groupedLayers(baseLayers, groupedOverlays).addTo(map);
+		var routing =  L.Routing.control({
+		  waypoints: [
+		    L.latLng(28.2380,83.9956),
+		    L.latLng(28.2380,83.8856)
+		  ]
+		});
+		L.easyButton('fa-compass',
+		  function (){
+		    $('.leaflet-routing-container').is(':visible') ? routing.removeFrom(map) : routing.addTo(map)
+		  },
+		  'Routing'
+		).addTo(map);
+		function createButton(label, container) {
+		    var btn = L.DomUtil.create('button', '', container);
+		    btn.setAttribute('type', 'button');
+		    btn.innerHTML = label;
+		    return btn;
+		}
+	}
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" src=" {% static 'dist/leaflet.ajax.js' %} "></script>
+<script type="text/javascript" src=" {% static 'dist/leaflet.ajax.min.js' %} "></script>
+<script type="text/javascript" src=" {% static 'layerControl/leaflet.groupedlayercontrol.min.js' %} "></script>
+<script type="text/javascript" src=" {% static 'route/leaflet-routing-machine.js' %} "></script>
+<script type="text/javascript" src=" {% static 'route/leaflet-routing-machine.min.js' %} "></script>
+
+{% leaflet_map 'gis' callback='window.our_layers' %}
+</body>
+</html>
+
+
